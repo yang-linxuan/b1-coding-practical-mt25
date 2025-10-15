@@ -119,6 +119,25 @@ class ClosedLoop:
         actions = np.zeros(T)
         self.plant.reset_state()
 
+        # Run closed-loop simulation
+        for t in range(T):
+            # Record the current position and depth
+            positions[t] = self.plant.get_position()
+            observation_t = self.plant.get_depth()
+
+            # Reference (target depth) at this timestep
+            reference_t = mission.reference[t]
+
+            # Controller computes control action
+            u_t = self.controller.compute_control_action(reference_t, observation_t)
+            actions[t] = u_t
+
+            # Update submarine state with control and disturbance ---
+            self.plant.transition(u_t, disturbances[t])
+
+        # Return the trajectory of the submarine's motion
+        return Trajectory(positions)
+
         for t in range(T):
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
